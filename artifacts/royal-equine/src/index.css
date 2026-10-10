@@ -682,6 +682,7 @@ button { cursor: pointer; }
 .modal-info h2 { margin:12px 0; font:500 24px/1.4 Montserrat,'Noto Sans Arabic',sans-serif; }
 .modal-info>strong { font:600 17px Montserrat,sans-serif; }
 .modal-info>p { color:#6c655d; font:400 12px/1.9 Inter,'Noto Sans Arabic',sans-serif; }
+.care-safety-note { padding:11px 13px; border-inline-start:2px solid var(--gold); background:#f2eee6; color:#5d554b!important; font-size:10px!important; line-height:1.7!important; }
 .product-perks { display:flex; flex-direction:column; gap:10px; margin:23px 0; }
 .product-perks span { display:flex; align-items:center; gap:9px; color:#585148; font:400 10px Inter,'Noto Sans Arabic',sans-serif; }
 .product-perks svg { width:14px; height:14px; color:var(--gold); }
