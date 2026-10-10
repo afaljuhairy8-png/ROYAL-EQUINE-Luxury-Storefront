@@ -1,0 +1,31 @@
+export type Department = 'horse' | 'rider' | 'care';
+export type Product = {
+  id: string; name: string; nameAr: string; category: string; categoryAr: string;
+  description: string; descriptionAr: string; department: Department; price: number;
+  image: string; badge?: string; badgeAr?: string;
+};
+
+const saddle = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCFoSsMsHLh1FfaATAwmvCbAFgP3fJDCnXQvHmFv0OXVFW4nvpW8VIOGKvcXvbWx0CO5d-0KuXtLjbq1l1BJ6th_W-sUgdK6AUnpI8EYtQh0lkoP08HKAtuNrJkVg6wXhZr0VQ34ijJ31Gbe40v7KGZg-0G_Qjs2_Tv4Mpu4oRJJytxF02plRqnUEWB0yHcakKSFYNRKqs3zS7wHaUIbxCttUlpJSwfXKsgz-ZxqfZTWS4xw0F5AiRc6w';
+const bridle = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBWiIE0zXCQ5DSXvzPRIzoTjP-_Ez-MGZOwpqMl-oDeuKYzoUqC9hUB0rKIoumHCNaXHY0KvT-TFbhRILYcuiT_l3dAlQmHoEmlb2p_iVj28JgALjgI7SNlB5o_n_kYidhME1rQX2-2M4noWO2kS1FOl9bxgRwbgLguiQTSMkCBesYHt06WXTCxEQqgn_AiBEtTgTILoTTfmgkrXG-0B_3NSJgfzGCc87JdiAe679YZsXI834zkcIYnug';
+const apparel = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCFR1DpFT0yeGRTIBkYJtXHe14cioaqVlUPtP_An1jXGzBfvl0xvidnRufhMNkmTGWLx5_F1srVpOk4Hm8ijPTVeeVAgZygYsoiVId7suXxd6t41OPZYFWUzFJySCaqq6IIR2gas9_URzw17E9tJ_EnaltkSvQ21IQtQY84W8SP5L_TLN64-8fEK__C2JSHMKRb2Sqi363P4sNvosgS38_YwvkNbSxZ8DNhLKnOGmWeo-u_TvmP99KJNw';
+const care = 'https://lh3.googleusercontent.com/aida-public/AB6AXuDZipdOp7y2BTF25J5Fj1rPF1NCpTTcuzv1ep--mOogobDIJv58RPIUdaCsC7Mnid-u55vIwMo2kDRpL4t9iNz_Qspmhxsv7fcnHCeMfWAEeJue8eLtnQ8S2Iv-xo5bwPFZvxjizLULywJS5LC603U0-KS-z7DjAWtaXvFfEdkbNVVGujeE1r_LiMSKNRCLRl8rJngry3bKjmXXj9QhBZdJJ5aEAGLJ-0q4ZTPxcrlsEzD6umfEK_-5sA';
+const pad = 'https://lh3.googleusercontent.com/aida-public/AB6AXuC0kOpPcw_RpFYDHPs65Qw8ySqeszoPU4BkHx6opF3vaDM8L1dH-WU2VGEjMC0frIvTeW9VvIHfZMlJQQzIt0n4lHliRYVQr9w2jXgAndjVmJau21FHPSrT3XEMdzQqlZRxrDkksaPFRPBO_5561hxl-YJwyWKJDQH2C6PrFUliiy04eH2PPsfozi168zvNecA6-XvcC4fenmLmu9eu48C7zqrp7Dx0Yg8DDjFjSGo2ffQcK5WLbi_mjg';
+
+export const products: Product[] = [
+  { id:'prod-1', name:'Sovereign Master Dressage Saddle', nameAr:'سرج سوفرين ماستر للترويض', category:'Haute Saddlery', categoryAr:'سروج فاخرة', description:'Hand-stitched English calfskin with custom deep seat balance and ergonomic gullet channel.', descriptionAr:'جلد عجل إنجليزي مخيط يدوياً مع مقعد عميق متوازن وقناة مريحة للظهر.', department:'horse', price:1280, image:saddle, badge:'Atelier Exclusive', badgeAr:'حصري للأتيليه' },
+  { id:'prod-2', name:'Imperial Gold-Stitched Hunter Bridle', nameAr:'لجام إمبيريال بخياطة ذهبية', category:'Bridles & Tack', categoryAr:'اللجم واللوازم', description:'Sedgwick leather treated with organic beeswax, lined in soft nappa with solid brass accents.', descriptionAr:'جلد سيدجويك معالج بشمع العسل الطبيعي ومبطن بالنابا الناعم مع تفاصيل نحاسية.', department:'horse', price:185, image:bridle, badge:'Heritage Leather', badgeAr:'جلد تراثي' },
+  { id:'prod-3', name:'Atelier Bespoke Competition Blazer', nameAr:'سترة منافسات مفصلة من الأتيليه', category:'Rider Tailoring', categoryAr:'أزياء الفروسية', description:'Technical Italian stretch wool with royal navy velvet lapel and crest metal buttons.', descriptionAr:'صوف إيطالي تقني مرن بياقة مخملية زرقاء ملكية وأزرار معدنية بشعار النبالة.', department:'rider', price:340, image:apparel, badge:'Made-to-Measure', badgeAr:'تفصيل حسب القياس' },
+  { id:'prod-4', name:'Royal Mane & Coat Botanical Elixir 500ml', nameAr:'إكسير رويال مان النباتي للشعر ٥٠٠ مل', category:'Horse Care', categoryAr:'العناية بالخيل', description:'Infused with cold-pressed argan, desert cedar, and frankincense for high-luster conditioning.', descriptionAr:'غني بزيت الأرغان المعصور على البارد وخشب الأرز واللبان لتغذية ولمعان فائق.', department:'care', price:38, image:care, badge:'Apothecary', badgeAr:'صيدلية الخيل' },
+  { id:'prod-5', name:'Quilted Velvet Desert Gold Saddle Pad', nameAr:'لبادة سرج مخملية مبطنة بذهبي الصحراء', category:'Accessories', categoryAr:'الإكسسوارات', description:'High-wither shock absorbent velvet with gold metallic double braided cording.', descriptionAr:'مخمل ماص للصدمات وملائم للظهر العالي مع حبل مضفور مزدوج باللون الذهبي.', department:'horse', price:72, image:pad, badge:'New Arrival', badgeAr:'وصل حديثاً' },
+  { id:'prod-6', name:'Calfskin Custom Riding Boots', nameAr:'جزمة ركوب جلد عجل حسب الطلب', category:'Footwear', categoryAr:'الأحذية', description:'Handmade in Florence from full-grain burnished calfskin with Spanish tops and reinforced heels.', descriptionAr:'صناعة يدوية في فلورنسا من جلد عجل كامل الحبيبات مع ساق إسبانية وكعب معزز.', department:'rider', price:460, image:apparel, badge:'Atelier Exclusive', badgeAr:'حصري للأتيليه' },
+  { id:'prod-7', name:'Organic Botanical Hoof Balm & Brush', nameAr:'بلسم حوافر نباتي عضوي مع فرشاة', category:'Apothecary', categoryAr:'صيدلية الخيل', description:'Desert clay and tea tree protective hoof sealant paired with horsehair wooden brush.', descriptionAr:'واقي للحوافر من طين الصحراء وشجرة الشاي مع فرشاة خشبية بشعر الخيل.', department:'care', price:24, image:care, badge:'Natural Care', badgeAr:'عناية طبيعية' },
+  { id:'prod-8', name:'Anatomical Crystal Wave Browband', nameAr:'عصابة رأس كريستالية بتصميم تشريحي', category:'Browbands', categoryAr:'عصابات الرأس', description:'Smoked topaz and champagne Austrian crystals set in channeled Havana saddle leather.', descriptionAr:'كريستال نمساوي بلون التوباز المدخن والشمبانيا مثبت على جلد سرج هافانا.', department:'horse', price:55, image:bridle, badge:'New Arrival', badgeAr:'وصل حديثاً' },
+];
+
+export const categories = [
+  { id:'horse', title:'Saddles & Custom Tack', ar:'السروج واللوازم المخصصة', eyebrow:'ATELIER SADDLERY', text:'Ergonomic gullets, French calfskin panels, and English-tanned trees fitted to order.', image:saddle, size:'wide' },
+  { id:'horse', title:'Bridles & Halters', ar:'اللجم والرسن', eyebrow:'PRECISION HARDWARE', text:'Anatomical crownpieces with hand-twisted metallic stitchwork.', image:bridle, size:'wide' },
+  { id:'rider', title:'Rider Apparel & Boots', ar:'ملابس الفروسية والأحذية', eyebrow:'HAUTE COUTURE EQUITATION', image:apparel, size:'' },
+  { id:'care', title:'Horse Care & Elixirs', ar:'العناية بالخيل والإكسير', eyebrow:'PEDIGREE APOTHECARY', image:care, size:'' },
+  { id:'horse', title:'Saddle Pads & Silks', ar:'لبادات السرج والأقمشة', eyebrow:'DESERT TEXTILES', image:pad, size:'' },
+];
