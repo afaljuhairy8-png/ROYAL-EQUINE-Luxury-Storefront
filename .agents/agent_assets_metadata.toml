@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "QDlQPKQy1zun4w90H-DmC"
+uri = "file://artifacts/royal-equine/public/royal-equine-promo.mp4"
+type = "video"
+title = "ROYAL EQUINE 10-Second Brand Film"
+description = "1080p landscape equestrian promo video used in the storefront homepage hero."
+logical_id = "e0e45769-a32e-44d5-b348-4cdbbba01e60"
+content_hash = "sha256:76d4eeb7274004eb51b9b497e0c28b084906e40302c4860cfd41b22d71dadd7f"
+size = 7532935
+mtime_ms = 1791651438932
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:23da023b-8382-44d4-b8e7-ade60f21a773/e0e45769-a32e-44d5-b348-4cdbbba01e60/41960255-1245-4542-bacf-a301c09644b8"
+storage_version_token = "1791651533627545"
+content_type = "video/mp4"

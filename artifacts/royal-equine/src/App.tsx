@@ -101,7 +101,9 @@ function App() {
 
   const home = <main className="storefront">
     <section className="hero">
-      <div className="hero-image" />
+      <video className="hero-video" autoPlay muted loop playsInline preload="metadata" poster="https://lh3.googleusercontent.com/aida-public/AB6AXuD2oDXbSpMQNoByuknD6rTr3IR7-KdsS12UzlMr06kwIWBTSzJO-tFAnzy7hYXlu_sjEOlz7spZLRqaCv8sotwcWNbul7m12_sz5XgLy-PX3hIKj1CYo9gKTYAIq5DbYZlDkiNZ5lsFaalUsdpoEyk115Uy33OUaWhs2QVuVOc3RirpoT6o8bKWKFj9Ve7tefLbr0eJTFX0ZHaVdP7A9dRfEQyNOtqVIKRzfgQoKsRCKbBATHwlcjyGbQ">
+        <source src={`${import.meta.env.BASE_URL}royal-equine-promo.mp4`} type="video/mp4" />
+      </video>
       <div className="hero-shade" />
       <div className="hero-content"><div className="eyebrow hero-eyebrow"><span />{t(lang, 'ROYAL EQUINE ATELIER · KUWAIT', 'أتيليه رويال إكويني · الكويت')}</div>
         <h1>{ar ? <>كل ما <em>يستحقه</em><br />جوادك.</> : <>Everything Your<br />Horse <em>Deserves.</em></>}</h1>
