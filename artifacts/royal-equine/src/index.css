@@ -893,3 +893,78 @@ button { cursor: pointer; }
  .add-button { padding:0 5px; }
  .filter-bar button { padding-inline:8px; letter-spacing:.02em; }
 }
+
+/* Client accounts and order history */
+.account-page { min-height:62vh; padding-top:70px; padding-bottom:92px; }
+.account-shell { max-width:1060px; min-height:560px; margin:0 auto; display:grid; grid-template-columns:1.05fr .95fr; background:#fffefa; border:1px solid var(--hairline); box-shadow:0 18px 55px rgba(33,29,25,.08); }
+.account-intro { padding:clamp(38px,6vw,76px); display:flex; flex-direction:column; justify-content:center; background:#211d19; color:var(--paper); }
+.account-intro .section-kicker { color:#d4b57f; }
+.account-intro h1,.orders-heading h1 { margin:18px 0 14px; font:400 clamp(30px,4.3vw,49px)/1.22 Montserrat,'Noto Sans Arabic',sans-serif; letter-spacing:-.025em; }
+.account-intro>p,.orders-heading>div>p { max-width:430px; color:#d0cbc3; font:400 13px/1.9 Inter,'Noto Sans Arabic',sans-serif; }
+.account-trust { display:flex; flex-wrap:wrap; gap:13px 22px; margin-top:33px; color:#e2c292; font:500 9px Montserrat,'Noto Sans Arabic',sans-serif; }
+.account-trust span { display:flex; align-items:center; gap:7px; }
+.account-form { padding:clamp(30px,5vw,62px); display:flex; flex-direction:column; justify-content:center; }
+.account-form-mark { width:42px; height:42px; display:grid; place-items:center; margin-bottom:19px; border:1px solid rgba(115,90,51,.36); border-radius:50%; color:var(--gold); }
+.account-form h2 { margin:0; font:500 23px/1.4 Montserrat,'Noto Sans Arabic',sans-serif; }
+.account-form>p { margin:7px 0 22px; color:#756d63; font:400 11px/1.7 Inter,'Noto Sans Arabic',sans-serif; }
+.account-form label,.delivery-form label { display:flex; flex-direction:column; gap:7px; margin:0 0 15px; color:#504940; font:600 9px/1.6 Montserrat,'Noto Sans Arabic',sans-serif; letter-spacing:.04em; }
+.account-form input { width:100%; min-height:45px; box-sizing:border-box; border:1px solid #dcd5ca; padding:0 12px; outline-color:#ad8c55; color:var(--ink); background:#fffefa; font:400 12px Inter,'Noto Sans Arabic',sans-serif; }
+.account-form input:focus { border-color:#ad8c55; }
+.account-hint { margin-top:-9px; color:#746b60; font:400 10px/1.6 Inter,sans-serif; }
+.account-error { color:#963d32 !important; font:500 11px/1.6 Inter,'Noto Sans Arabic',sans-serif; }
+.account-submit { width:100%; margin-top:8px; }
+.account-submit:disabled,.submit-order:disabled { opacity:.65; cursor:wait; }
+.account-switch { display:flex; justify-content:center; flex-wrap:wrap; gap:5px; margin-top:19px; color:#756d63; font:400 10px/1.6 Inter,'Noto Sans Arabic',sans-serif; }
+.account-switch button { padding:0; border:0; background:none; color:var(--gold); text-decoration:underline; font:600 10px Inter,'Noto Sans Arabic',sans-serif; }
+.account-state { max-width:800px; min-height:170px; margin:20px auto; padding:32px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:#fffefa; color:#62594f; text-align:center; font:400 12px/1.8 Inter,'Noto Sans Arabic',sans-serif; }
+.account-state p { margin:0 0 12px; }
+.account-state svg { color:var(--gold); }
+.orders-page { max-width:1264px; }
+.orders-heading { display:flex; align-items:end; justify-content:space-between; gap:24px; margin-bottom:35px; }
+.orders-heading .section-kicker { color:var(--gold); }
+.orders-heading h1 { margin:9px 0; color:var(--ink); }
+.orders-heading>div>p { margin:0; color:#71695f; }
+.orders-heading .back-link { display:flex; align-items:center; gap:8px; padding:11px 0; border:0; background:none; color:var(--gold); font:600 9px Montserrat,'Noto Sans Arabic',sans-serif; text-transform:uppercase; letter-spacing:.1em; }
+.orders-empty { min-height:270px; }
+.orders-empty h2 { margin:5px 0; color:var(--ink); font:500 21px/1.4 Montserrat,'Noto Sans Arabic',sans-serif; }
+.orders-empty p { max-width:460px; color:#71695f; }
+.orders-list { display:grid; gap:15px; }
+.order-card { padding:24px clamp(18px,3vw,31px); border:1px solid var(--hairline); background:#fffefa; }
+.order-card-heading,.order-card-meta,.order-card-item,.order-delivery { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.order-card-heading { padding-bottom:16px; border-bottom:1px solid var(--hairline); }
+.order-card-heading>div { display:grid; gap:6px; }
+.order-card-heading>div>b { font:600 14px Montserrat,sans-serif; letter-spacing:.06em; }
+.order-status { padding:7px 10px; background:#eee8dc; color:#63502f; font:600 8px Montserrat,'Noto Sans Arabic',sans-serif; letter-spacing:.08em; text-transform:uppercase; }
+.order-status.paid { background:#e4eee5; color:#355c3a; }
+.order-card-meta { justify-content:flex-start; padding:14px 0; color:#766e64; font:400 10px/1.6 Inter,'Noto Sans Arabic',sans-serif; }
+.order-card-meta b { margin-inline-start:auto; color:var(--ink); font:600 12px Montserrat,sans-serif; }
+.order-card-items { border-top:1px solid #eee9e1; }
+.order-card-item { justify-content:flex-start; min-height:76px; padding:10px 0; border-bottom:1px solid #eee9e1; color:var(--ink); font:500 11px/1.5 Montserrat,'Noto Sans Arabic',sans-serif; }
+.order-card-item>img { width:52px; height:58px; object-fit:cover; background:#e8e2d8; }
+.order-card-item>span { flex:1; }
+.order-card-item small { display:block; margin-top:5px; color:#81786c; font:400 9px Inter,'Noto Sans Arabic',sans-serif; }
+.order-card-item>b { white-space:nowrap; font:600 10px Montserrat,sans-serif; }
+.order-delivery { justify-content:flex-start; flex-wrap:wrap; padding-top:14px; color:#71695f; font:400 9px/1.6 Inter,'Noto Sans Arabic',sans-serif; }
+.order-delivery span+span { margin-inline-start:auto; }
+.checkout-auth-required { max-width:720px; margin:35px auto; padding:clamp(28px,6vw,62px); border:1px solid var(--hairline); background:#fffefa; text-align:center; }
+.checkout-auth-required h1 { margin:12px 0; font:500 clamp(27px,4vw,40px)/1.25 Montserrat,'Noto Sans Arabic',sans-serif; }
+.checkout-auth-required p { max-width:500px; margin:0 auto 22px; color:#71695f; font:400 12px/1.8 Inter,'Noto Sans Arabic',sans-serif; }
+.checkout-auth-required>div { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; }
+.checkout-signup { color:var(--ink); border-color:#b9ab93; }
+.panel-empty .button-dark { margin-top:12px; }
+
+@media (max-width:760px) {
+ .account-page { padding-top:34px; padding-bottom:58px; }
+ .account-shell { min-height:0; grid-template-columns:1fr; }
+ .account-intro { padding:32px 25px; }
+ .account-intro h1 { font-size:32px; }
+ .account-trust { margin-top:20px; }
+ .account-form { padding:29px 24px 33px; }
+ .orders-heading { align-items:flex-start; flex-direction:column; gap:10px; }
+ .orders-heading h1 { font-size:34px; }
+ .order-card { padding:18px 15px; }
+ .order-card-meta { flex-wrap:wrap; gap:8px 13px; }
+ .order-card-meta b { width:100%; margin-inline-start:0; }
+ .order-delivery span+span { margin-inline-start:0; }
+ .checkout-auth-required { margin:20px auto; }
+}

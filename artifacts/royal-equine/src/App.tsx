@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Heart, Menu, Minus, Plus, Search, ShoppingBag, SlidersHorizontal, Truck, X } from 'lucide-react';
-import { categories, products, type Product, type ProductFilter } from './catalogue';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Heart, Menu, Minus, Plus, Search, ShoppingBag, SlidersHorizontal, Truck, UserRound, X } from 'lucide-react';
+import type { AuthUser } from '@workspace/api-client-react';
+import { categories, type Product, type ProductFilter } from './catalogue';
+import { AccountPage, OrdersPage } from './components/AccountPages';
 
 type Lang = 'en' | 'ar';
 type CartLine = { id: string; quantity: number };
@@ -16,6 +18,14 @@ function App() {
   const [lang, setLang] = useState<Lang>(() => read('royal-language', 'en'));
   const [cart, setCart] = useState<CartLine[]>(() => read('royal-cart', []));
   const [favorites, setFavorites] = useState<string[]>(() => read('royal-favorites', []));
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsUnavailable, setProductsUnavailable] = useState(false);
+  const [catalogueRetry, setCatalogueRetry] = useState(0);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<ProductFilter>('all');
   const [panel, setPanel] = useState<'cart' | 'favorites' | null>(null);
@@ -26,9 +36,44 @@ function App() {
   const [order, setOrder] = useState<string | null>(null);
   const ar = lang === 'ar';
   const checkout = location === '/checkout';
+  const loginPage = location === '/login';
+  const signupPage = location === '/signup';
+  const ordersPage = location === '/orders';
+  useEffect(() => {
+    if (ordersPage && !authLoading && !user) setLocation('/login?next=%2Forders');
+  }, [ordersPage, authLoading, user, setLocation]);
+  useEffect(() => {
+    let active = true;
+    setProductsLoading(true);
+    setProductsUnavailable(false);
+    fetch('/api/products')
+      .then(async response => {
+        if (!response.ok) throw new Error('Catalogue request failed');
+        return await response.json() as Product[];
+      })
+      .then(data => { if (active) setProducts(data); })
+      .catch(() => { if (active) setProductsUnavailable(true); })
+      .finally(() => { if (active) setProductsLoading(false); });
+    return () => { active = false; };
+  }, [catalogueRetry]);
+  useEffect(() => {
+    let active = true;
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(async response => response.ok ? await response.json() as AuthUser : null)
+      .then(account => { if (active) setUser(account); })
+      .catch(() => { if (active) setUser(null); })
+      .finally(() => { if (active) setAuthLoading(false); });
+    return () => { active = false; };
+  }, []);
   useEffect(() => { localStorage.setItem('royal-language', JSON.stringify(lang)); document.documentElement.lang = lang; document.documentElement.dir = ar ? 'rtl' : 'ltr'; }, [lang, ar]);
   useEffect(() => { localStorage.setItem('royal-cart', JSON.stringify(cart)); }, [cart]);
   useEffect(() => { localStorage.setItem('royal-favorites', JSON.stringify(favorites)); }, [favorites]);
+  useEffect(() => {
+    if (!products.length) return;
+    const availableIds = new Set(products.map(product => product.id));
+    setCart(current => current.filter(item => availableIds.has(item.id)));
+    setFavorites(current => current.filter(id => availableIds.has(id)));
+  }, [products]);
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { setPanel(null); setDetail(null); setMobileMenu(false); }
@@ -37,8 +82,16 @@ function App() {
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, []);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const total = cart.reduce((sum, item) => sum + (products.find(p => p.id === item.id)?.price ?? 0) * item.quantity, 0);
-  const visibleProducts = useMemo(() => products.filter(p => (filter === 'all' || (filter === 'supplements' || filter === 'medicine' ? p.shelf === filter : p.department === filter)) && `${p.name} ${p.nameAr} ${p.category} ${p.description}`.toLowerCase().includes(search.toLowerCase())), [filter, search]);
+  const cartProducts = cart.reduce<Array<{ line: CartLine; product: Product }>>((items, line) => {
+    const product = products.find(item => item.id === line.id);
+    if (product) items.push({ line, product });
+    return items;
+  }, []);
+  const panelCatalogReady = !productsLoading && !productsUnavailable &&
+    cart.every(line => products.some(product => product.id === line.id)) &&
+    favorites.every(id => products.some(product => product.id === id));
+  const total = cartProducts.reduce((sum, item) => sum + item.product.price * item.line.quantity, 0);
+  const visibleProducts = useMemo(() => products.filter(p => (filter === 'all' || (filter === 'supplements' || filter === 'medicine' ? p.shelf === filter : p.department === filter)) && `${p.name} ${p.nameAr} ${p.category} ${p.description}`.toLowerCase().includes(search.toLowerCase())), [filter, search, products]);
   const announce = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
   const addToCart = (product: Product) => {
     setCart(current => current.some(item => item.id === product.id) ? current.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item) : [...current, { id: product.id, quantity: 1 }]);
@@ -47,12 +100,56 @@ function App() {
   const quantity = (id: string, delta: number) => setCart(current => current.map(item => item.id === id ? { ...item, quantity: item.quantity + delta } : item).filter(item => item.quantity > 0));
   const toggleFavorite = (id: string) => setFavorites(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
   const chooseDepartment = (dept: ProductFilter) => { setFilter(dept); setMobileMenu(false); document.getElementById('atelier-curations')?.scrollIntoView({ behavior: 'smooth' }); };
-  const checkoutComplete = (event: FormEvent<HTMLFormElement>) => {
+  const checkoutComplete = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!cart.length) return;
-    setOrder(`RE-${Math.random().toString(36).slice(2, 8).toUpperCase()}`);
-    setCart([]);
+    if (!user) {
+      setLocation('/login?next=%2Fcheckout');
+      return;
+    }
+    setPlacingOrder(true);
+    setOrderError('');
+    const form = new FormData(event.currentTarget);
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cart.map(item => ({ productId: item.id, quantity: item.quantity })),
+          delivery: {
+            firstName: String(form.get('firstName') ?? ''),
+            lastName: String(form.get('lastName') ?? ''),
+            phone: String(form.get('phone') ?? ''),
+            area: String(form.get('area') ?? ''),
+            address: String(form.get('address') ?? ''),
+            notes: String(form.get('notes') ?? ''),
+          },
+        }),
+      });
+      const result = await response.json() as { orderNumber?: string; error?: string };
+      if (!response.ok || !result.orderNumber) throw new Error(result.error || 'Your order could not be saved.');
+      setOrder(result.orderNumber);
+      setCart([]);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      setOrderError(error instanceof Error ? error.message : t(lang, 'Your order could not be saved. Please try again.', 'تعذر حفظ طلبك. يرجى المحاولة مرة أخرى.'));
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+  const authenticated = (account: AuthUser) => {
+    setUser(account);
+    const next = new URLSearchParams(window.location.search).get('next');
+    const destination = next?.startsWith('/') && !next.startsWith('//') ? next : '/';
+    setLocation(destination);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const logout = async () => {
+    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch { /* Local sign-out still clears the client session. */ } finally {
+      setUser(null);
+      setLocation('/');
+    }
   };
 
   const header = <header className="site-header">
@@ -67,6 +164,8 @@ function App() {
         <button onClick={() => chooseDepartment('horse')}>{t(lang, 'Horse Equipment', 'معدات الخيل')}</button>
         <button onClick={() => chooseDepartment('rider')}>{t(lang, 'Rider Apparel', 'ملابس الفروسية')}</button>
         <button onClick={() => chooseDepartment('care')}>{t(lang, 'Horse Care', 'العناية بالخيل')}</button>
+        <button onClick={() => setLocation(user ? '/orders' : '/login')}>{user ? <><UserRound size={14} /> {t(lang, 'My Orders', 'طلباتي')}</> : t(lang, 'Sign in', 'تسجيل الدخول')}</button>
+        {user && <button onClick={logout}>{t(lang, 'Log out', 'تسجيل الخروج')}</button>}
       </nav>
       <div className="header-actions">
         <button className="lang-toggle" onClick={() => setLang(ar ? 'en' : 'ar')} aria-label={t(lang, 'Switch to Arabic', 'التبديل إلى الإنجليزية')}>{ar ? 'EN' : 'عربي'}</button>
@@ -118,7 +217,7 @@ function App() {
     </section>
     <section className="curations" id="atelier-curations"><div className="page-wrap"><div className="section-heading product-heading"><div><span className="section-kicker">{t(lang, 'HANDCRAFTED EXCELLENCE', 'حرفية يدوية استثنائية')}</span><h2>{t(lang, 'Atelier Curations — Best Sellers', 'مختارات الأتيليه — الأكثر طلباً')}</h2><p>{t(lang, 'Coveted essentials crafted for precision, comfort, and distinction across Kuwait endurance tracks and global arenas.', 'مستلزمات مختارة بدقة وراحة وأناقة لميادين الكويت والساحات العالمية.')}</p></div></div>
       <div className="filter-bar">{(['all','horse','rider','care','supplements','medicine'] as const).map(key => <button key={key} className={filter === key ? 'filter-active' : ''} onClick={() => setFilter(key)}>{key === 'all' ? t(lang,'All pieces','كل المنتجات') : key === 'horse' ? t(lang,'Horse equipment','معدات الخيل') : key === 'rider' ? t(lang,'Rider apparel','ملابس الفرسان') : key === 'care' ? t(lang,'Care essentials','العناية بالخيل') : key === 'supplements' ? t(lang,'Supplements','المكملات') : t(lang,'Veterinary & first aid','الطب البيطري والإسعافات')}</button>)}</div>
-      {visibleProducts.length ? <div className="product-grid">{visibleProducts.map(productCard)}</div> : <div className="empty-products"><Search /><b>{t(lang, 'No pieces found', 'لم نعثر على منتجات')}</b><p>{t(lang, 'Try a different search or browse all of the collection.', 'جرّب بحثاً آخر أو استعرض المجموعة كاملة.')}</p><button onClick={() => { setSearch(''); setFilter('all'); }}>{t(lang, 'Clear filters', 'مسح الفلاتر')}</button></div>}
+       {productsLoading ? <div className="empty-products" role="status"><span className="section-kicker">{t(lang, 'LOADING THE ATELIER CATALOGUE', 'جارٍ تحميل منتجات الأتيليه')}</span><p>{t(lang, 'Our collection is being prepared for you.', 'يتم تجهيز مجموعتنا لك.')}</p></div> : productsUnavailable ? <div className="empty-products" role="alert"><span className="section-kicker">{t(lang, 'CATALOGUE TEMPORARILY UNAVAILABLE', 'الكتالوج غير متاح مؤقتاً')}</span><p>{t(lang, 'Please try again in a moment.', 'يرجى المحاولة مرة أخرى بعد قليل.')}</p><button onClick={() => setCatalogueRetry(value => value + 1)}>{t(lang, 'Try again', 'إعادة المحاولة')}</button></div> : visibleProducts.length ? <div className="product-grid">{visibleProducts.map(productCard)}</div> : <div className="empty-products"><Search /><b>{t(lang, 'No pieces found', 'لم نعثر على منتجات')}</b><p>{t(lang, 'Try a different search or browse all of the collection.', 'جرّب بحثاً آخر أو استعرض المجموعة كاملة.')}</p><button onClick={() => { setSearch(''); setFilter('all'); }}>{t(lang, 'Clear filters', 'مسح الفلاتر')}</button></div>}
     </div></section>
     <section className="heritage"><div className="heritage-photo"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2oDXbSpMQNoByuknD6rTr3IR7-KdsS12UzlMr06kwIWBTSzJO-tFAnzy7hYXlu_sjEOlz7spZLRqaCv8sotwcWNbul7m12_sz5XgLy-PX3hIKj1CYo9gKTYAIq5DbYZlDkiNZ5lsFaalUsdpoEyk115Uy33OUaWhs2QVuVOc3RirpoT6o8bKWKFj9Ve7tefLbr0eJTFX0ZHaVdP7A9dRfEQyNOtqVIKRzfgQoKsRCKbBATHwlcjyGbQ" alt="Arabian horse and rider at golden hour" loading="lazy" /><span className="photo-caption">{t(lang, 'MASTER SADDLER GUARANTEE', 'ضمان صانع السروج')}</span></div><div className="heritage-copy"><span className="section-kicker">{t(lang, 'BESPOKE LINEAGE', 'إرث مصمم حسب الطلب')}</span><h2>{t(lang, 'The Heritage of Royal Equine Kuwait', 'إرث رويال إكويني الكويت')}</h2><p className="heritage-lead">{t(lang, 'Born from a profound Gulf reverence for Arabian thoroughbreds and noble equestrian arts, Royal Equine pairs aristocratic British saddlery traditions with Italian artisan leatherwork.', 'انطلاقاً من تقدير الخليج العميق للخيل العربية الأصيلة وفنون الفروسية النبيلة، تجمع رويال إكويني بين تقاليد السروج البريطانية والحرفية الجلدية الإيطالية.')}</p><p>{t(lang, 'In our private Salmiya atelier and Sabhan fitting facilities, we examine equine spine ergonomics, wither geometry, and rider balance. Superior equipment forms a symbiotic dialogue between horse and patron.', 'في أتيليه السالمية الخاص ومرافق القياس في صبحان، ندرس راحة العمود الفقري للخيل وتوازن الفارس. فالمعدات المتميزة حوار متناغم بين الجواد وفارسه.')}</p><div className="heritage-facts"><div><b>100%</b><small>{t(lang, 'Full-grain leather', 'جلد كامل الحبيبات')}</small><span>{t(lang, 'Naturally oak-bark cured', 'مدبوغ طبيعياً بلحاء البلوط')}</span></div><div><b>{t(lang, 'Hand-sewn', 'مخيط يدوياً')}</b><small>{t(lang, 'England & Italy', 'إنجلترا وإيطاليا')}</small><span>{t(lang, 'Two-needle saddle stitching', 'خياطة سرج بإبرتين')}</span></div><div><b>{t(lang, 'Certified', 'معتمد')}</b><small>{t(lang, 'Show & endurance', 'العروض والتحمل')}</small><span>{t(lang, 'Kuwait Equestrian Federation', 'الاتحاد الكويتي للفروسية')}</span></div></div></div></section>
     <section className="testimonials page-wrap"><div className="testimonial-heading"><span className="section-kicker">{t(lang, 'PATRON DISTINCTIONS', 'آراء عملائنا')}</span><h2>{t(lang, 'Voices from the Gulf Arena', 'أصوات من ميادين الخليج')}</h2><p>{t(lang, 'Trusted by championship riders, elite stables, and royal studs across the State of Kuwait.', 'محل ثقة الفرسان الأبطال والإسطبلات المتميزة ومزارع الخيل الأصيلة في الكويت.')}</p></div><div className="testimonial-grid">{[
@@ -132,12 +231,30 @@ function App() {
   const checkoutPage = <main className="checkout-page page-wrap">
     {order ? <div className="confirmation"><div className="confirmation-mark"><Check /></div><span className="section-kicker">{t(lang, 'ORDER RECEIVED', 'تم استلام الطلب')}</span><h1>{t(lang, 'Thank you for choosing Royal Equine.', 'شكراً لاختيارك رويال إكويني.')}</h1><p>{t(lang, 'Your order has been placed with our Salmiya atelier. Our Kuwait concierge will contact you shortly to confirm delivery details.', 'تم تسجيل طلبك لدى أتيليه السالمية. سيتواصل معك فريق خدمة العملاء في الكويت قريباً لتأكيد تفاصيل التوصيل.')}</p><div className="order-reference"><small>{t(lang, 'ORDER REFERENCE', 'رقم الطلب')}</small><b>{order}</b></div><div className="payment-note">{t(lang, 'This is an order confirmation only. No online payment has been taken; payment arrangements will be confirmed by our concierge.', 'هذا تأكيد طلب فقط. لم يتم تحصيل أي مبلغ عبر الإنترنت؛ سيؤكد فريقنا ترتيبات الدفع.')}</div><button className="button-dark" onClick={() => { setOrder(null); setLocation('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{t(lang, 'Return to the atelier', 'العودة إلى الأتيليه')} <ArrowRight size={16} /></button></div>
     : <><div className="checkout-top"><button onClick={() => setLocation('/')} className="back-link"><ArrowLeft size={16} /> {t(lang, 'Continue shopping', 'متابعة التسوق')}</button><span className="section-kicker">{t(lang, 'SALMIYA ATELIER · KUWAIT', 'أتيليه السالمية · الكويت')}</span></div><div className="checkout-title"><span className="section-kicker">{t(lang, 'PRIVATE CLIENT CHECKOUT', 'إتمام طلب العميل')}</span><h1>{t(lang, 'Your order, thoughtfully delivered.', 'طلبك في طريقه إليك.')}</h1><p>{t(lang, 'Complimentary VIP courier delivery across Kuwait. Our concierge will personally confirm your order.', 'توصيل VIP مجاني في أنحاء الكويت. سيؤكد فريقنا تفاصيل طلبك شخصياً.')}</p></div>
-      {cart.length === 0 ? <div className="checkout-empty"><ShoppingBag /><h2>{t(lang, 'Your bag is awaiting its first treasure.', 'حقيبتك بانتظار أولى مقتنياتها.')}</h2><button className="button-dark" onClick={() => setLocation('/')}>{t(lang, 'Explore the collection', 'اكتشف المجموعة')} <ArrowRight size={16} /></button></div> : <div className="checkout-columns"><form className="delivery-form" onSubmit={checkoutComplete}><h2>{t(lang, 'Delivery details', 'تفاصيل التوصيل')}</h2><p>{t(lang, 'A few details for a seamless Kuwait delivery.', 'بعض التفاصيل لتوصيل سلس داخل الكويت.')}</p><div className="field-row"><label>{t(lang,'First name','الاسم الأول')}<input name="firstName" required autoComplete="given-name" /></label><label>{t(lang,'Last name','اسم العائلة')}<input name="lastName" required autoComplete="family-name" /></label></div><label>{t(lang,'Email address','البريد الإلكتروني')}<input type="email" name="email" required autoComplete="email" /></label><label>{t(lang,'Mobile number','رقم الهاتف')}<div className="phone-input"><span>+965</span><input type="tel" name="phone" required pattern="[0-9]{8}" minLength={8} maxLength={8} placeholder="5XXX XXXX" autoComplete="tel-national" /></div></label><label>{t(lang,'Delivery area','منطقة التوصيل')}<select required defaultValue=""><option value="" disabled>{t(lang,'Select your area','اختر المنطقة')}</option>{['Salmiya','Kuwait City','Hawally','Sabhan','Jabriya','Mishref','Other'].map(area => <option key={area}>{area}</option>)}</select></label><label>{t(lang,'Street address & building','عنوان الشارع والمبنى')}<input name="address" required autoComplete="street-address" /></label><label>{t(lang,'Delivery notes (optional)','ملاحظات التوصيل (اختياري)')}<textarea name="notes" rows={3} placeholder={t(lang,'Apartment, floor, or preferred time','الشقة أو الطابق أو الوقت المناسب')} /></label><div className="payment-note"><b>{t(lang, 'Payment arranged with our concierge', 'الدفع بالتنسيق مع فريقنا')}</b><span>{t(lang, 'No payment is collected online. We will contact you to confirm your order and payment arrangements.', 'لا يتم تحصيل أي مبلغ عبر الإنترنت. سنتواصل معك لتأكيد الطلب وترتيبات الدفع.')}</span></div><button className="button-dark submit-order" type="submit">{t(lang, 'Place order', 'تأكيد الطلب')} <ArrowRight size={16} /></button></form>
-        <aside className="order-summary"><h2>{t(lang, 'Your selection', 'اختياراتك')} <span>({cartCount})</span></h2><div className="summary-lines">{cart.map(line => { const p = products.find(item => item.id === line.id)!; return <div className="summary-item" key={p.id}><img src={p.image} alt="" /><div><b>{ar ? p.nameAr : p.name}</b><small>{money(p.price)}</small><div className="quantity-control"><button type="button" onClick={() => quantity(p.id, -1)} aria-label={t(lang,'Decrease quantity','تقليل الكمية')}><Minus /></button><span>{line.quantity}</span><button type="button" onClick={() => quantity(p.id, 1)} aria-label={t(lang,'Increase quantity','زيادة الكمية')}><Plus /></button><button type="button" className="remove-line" onClick={() => setCart(current => current.filter(item => item.id !== p.id))}>{t(lang,'Remove','إزالة')}</button></div></div><strong>{money(p.price * line.quantity)}</strong></div>; })}</div><div className="summary-totals"><div><span>{t(lang,'Subtotal','المجموع الفرعي')}</span><b>{money(total)}</b></div><div><span>{t(lang,'Kuwait VIP delivery','توصيل VIP داخل الكويت')}</span><b>{t(lang,'Complimentary','مجاني')}</b></div><div className="summary-total"><span>{t(lang,'Total','الإجمالي')}</span><b>{money(total)}</b></div></div><p className="secure-note"><Truck size={16} />{t(lang,'White-glove delivery across Kuwait in 24–48 hours.', 'توصيل فاخر في أنحاء الكويت خلال ٢٤–٤٨ ساعة.')}</p></aside></div>}</>}
+       {cart.length === 0 ? <div className="checkout-empty"><ShoppingBag /><h2>{t(lang, 'Your bag is awaiting its first treasure.', 'حقيبتك بانتظار أولى مقتنياتها.')}</h2><button className="button-dark" onClick={() => setLocation('/')}>{t(lang, 'Explore the collection', 'اكتشف المجموعة')} <ArrowRight size={16} /></button></div> : <div className="checkout-columns"><form className="delivery-form" onSubmit={checkoutComplete}><h2>{t(lang, 'Delivery details', 'تفاصيل التوصيل')}</h2><p>{t(lang, 'A few details for a seamless Kuwait delivery.', 'بعض التفاصيل لتوصيل سلس داخل الكويت.')}</p><div className="field-row"><label>{t(lang,'First name','الاسم الأول')}<input name="firstName" required autoComplete="given-name" defaultValue={user?.name.split(' ')[0]} /></label><label>{t(lang,'Last name','اسم العائلة')}<input name="lastName" required autoComplete="family-name" defaultValue={user?.name.split(' ').slice(1).join(' ')} /></label></div><label>{t(lang,'Email address','البريد الإلكتروني')}<input type="email" name="email" required autoComplete="email" value={user?.email ?? ''} readOnly /></label><label>{t(lang,'Mobile number','رقم الهاتف')}<div className="phone-input"><span>+965</span><input type="tel" name="phone" required pattern="[0-9]{8}" minLength={8} maxLength={8} placeholder="5XXX XXXX" autoComplete="tel-national" /></div></label><label>{t(lang,'Delivery area','منطقة التوصيل')}<select name="area" required defaultValue=""><option value="" disabled>{t(lang,'Select your area','اختر المنطقة')}</option>{['Salmiya','Kuwait City','Hawally','Sabhan','Jabriya','Mishref','Other'].map(area => <option key={area}>{area}</option>)}</select></label><label>{t(lang,'Street address & building','عنوان الشارع والمبنى')}<input name="address" required autoComplete="street-address" /></label><label>{t(lang,'Delivery notes (optional)','ملاحظات التوصيل (اختياري)')}<textarea name="notes" rows={3} placeholder={t(lang,'Apartment, floor, or preferred time','الشقة أو الطابق أو الوقت المناسب')} /></label><div className="payment-note"><b>{t(lang, 'Payment arranged with our concierge', 'الدفع بالتنسيق مع فريقنا')}</b><span>{t(lang, 'No payment is collected online. We will contact you to confirm your order and payment arrangements.', 'لا يتم تحصيل أي مبلغ عبر الإنترنت. سنتواصل معك لتأكيد الطلب وترتيبات الدفع.')}</span></div>{orderError && <p className="account-error" role="alert">{orderError}</p>}<button className="button-dark submit-order" type="submit" disabled={placingOrder}>{placingOrder ? t(lang, 'Saving your order…', 'جارٍ حفظ طلبك…') : t(lang, 'Place order', 'تأكيد الطلب')} <ArrowRight size={16} /></button></form>
+        <aside className="order-summary"><h2>{t(lang, 'Your selection', 'اختياراتك')} <span>({cartCount})</span></h2><div className="summary-lines">{cartProducts.map(({ line, product: p }) => <div className="summary-item" key={p.id}><img src={p.image} alt="" /><div><b>{ar ? p.nameAr : p.name}</b><small>{money(p.price)}</small><div className="quantity-control"><button type="button" onClick={() => quantity(p.id, -1)} aria-label={t(lang,'Decrease quantity','تقليل الكمية')}><Minus /></button><span>{line.quantity}</span><button type="button" onClick={() => quantity(p.id, 1)} aria-label={t(lang,'Increase quantity','زيادة الكمية')}><Plus /></button><button type="button" className="remove-line" onClick={() => setCart(current => current.filter(item => item.id !== p.id))}>{t(lang,'Remove','إزالة')}</button></div></div><strong>{money(p.price * line.quantity)}</strong></div>)}</div><div className="summary-totals"><div><span>{t(lang,'Subtotal','المجموع الفرعي')}</span><b>{money(total)}</b></div><div><span>{t(lang,'Kuwait VIP delivery','توصيل VIP داخل الكويت')}</span><b>{t(lang,'Complimentary','مجاني')}</b></div><div className="summary-total"><span>{t(lang,'Total','الإجمالي')}</span><b>{money(total)}</b></div></div><p className="secure-note"><Truck size={16} />{t(lang,'White-glove delivery across Kuwait in 24–48 hours.', 'توصيل فاخر في أنحاء الكويت خلال ٢٤–٤٨ ساعة.')}</p></aside></div>}</>}
   </main>;
 
-  return <div className={`app-shell ${ar ? 'arabic' : ''}`} dir={ar ? 'rtl' : 'ltr'}>{header}{checkout ? checkoutPage : home}{footer}
-    {panel && <div className="overlay" onClick={() => setPanel(null)}><aside className="side-panel" onClick={e => e.stopPropagation()} aria-label={panel === 'cart' ? t(lang,'Shopping bag','حقيبة التسوق') : t(lang,'Favorites','المفضلة')}><div className="panel-header"><div><span className="section-kicker">{panel === 'cart' ? t(lang,'YOUR SELECTION','اختياراتك') : t(lang,'SAVED FOR LATER','محفوظاتك')}</span><h2>{panel === 'cart' ? t(lang,`Shopping bag (${cartCount})`,`حقيبة التسوق (${cartCount})`) : t(lang,`Favorites (${favorites.length})`,`المفضلة (${favorites.length})`)}</h2></div><button className="icon-button" onClick={() => setPanel(null)} aria-label={t(lang,'Close','إغلاق')}><X /></button></div>
+  const checkoutRoute = authLoading || productsLoading
+    ? <main className="checkout-page page-wrap"><div className="account-state" role="status">{t(lang, 'Preparing your private checkout…', 'جارٍ تجهيز إتمام طلبك…')}</div></main>
+    : productsUnavailable
+      ? <main className="checkout-page page-wrap"><div className="account-state account-error" role="alert"><p>{t(lang, 'The catalogue is temporarily unavailable, so checkout cannot be completed yet.', 'الكتالوج غير متاح مؤقتاً، لذلك لا يمكن إتمام الطلب الآن.')}</p><button className="button-dark" onClick={() => setCatalogueRetry(value => value + 1)}>{t(lang, 'Try again', 'إعادة المحاولة')}</button></div></main>
+      : !user && !order
+        ? <main className="checkout-page page-wrap"><section className="checkout-auth-required"><span className="section-kicker">{t(lang, 'PRIVATE CLIENT CHECKOUT', 'إتمام طلب العميل')}</span><h1>{t(lang, 'Sign in to complete your order.', 'سجل الدخول لإتمام طلبك.')}</h1><p>{t(lang, 'Your shopping bag will stay saved while you sign in or create an account.', 'ستبقى حقيبة التسوق محفوظة أثناء تسجيل الدخول أو إنشاء الحساب.')}</p><div><button className="button-dark" onClick={() => setLocation('/login?next=%2Fcheckout')}>{t(lang, 'Sign in', 'تسجيل الدخول')} <ArrowRight size={16} /></button><button className="button-outline checkout-signup" onClick={() => setLocation('/signup?next=%2Fcheckout')}>{t(lang, 'Create an account', 'إنشاء حساب')}</button></div></section></main>
+        : checkoutPage;
+  const pageContent = checkout
+    ? checkoutRoute
+    : loginPage || signupPage
+      ? <AccountPage lang={lang} mode={signupPage ? 'signup' : 'login'} navigate={setLocation} onAuthenticated={authenticated} />
+      : ordersPage
+        ? authLoading || !user
+          ? <main className="account-page page-wrap"><div className="account-state" role="status">{t(lang, 'Checking your private account…', 'جارٍ التحقق من حسابك…')}</div></main>
+          : <OrdersPage user={user} lang={lang} navigate={setLocation} />
+        : home;
+
+  return <div className={`app-shell ${ar ? 'arabic' : ''}`} dir={ar ? 'rtl' : 'ltr'}>{header}{pageContent}{footer}
+    {panel && !panelCatalogReady && <div className="overlay" onClick={() => setPanel(null)}><aside className="side-panel" onClick={e => e.stopPropagation()}><div className="panel-header"><div><span className="section-kicker">{panel === 'cart' ? t(lang,'YOUR SELECTION','اختياراتك') : t(lang,'SAVED FOR LATER','محفوظاتك')}</span><h2>{panel === 'cart' ? t(lang,`Shopping bag (${cartCount})`,`حقيبة التسوق (${cartCount})`) : t(lang,`Favorites (${favorites.length})`,`المفضلة (${favorites.length})`)}</h2></div><button className="icon-button" onClick={() => setPanel(null)} aria-label={t(lang,'Close','إغلاق')}><X /></button></div><div className="panel-empty" role={productsUnavailable ? 'alert' : 'status'}><ShoppingBag /><h3>{productsLoading ? t(lang, 'Loading your saved pieces…', 'جارٍ تحميل مقتنياتك…') : productsUnavailable ? t(lang, 'The catalogue is temporarily unavailable.', 'الكتالوج غير متاح مؤقتاً.') : t(lang, 'Refreshing your saved pieces…', 'جارٍ تحديث مقتنياتك…')}</h3>{productsUnavailable && <button className="button-dark" onClick={() => setCatalogueRetry(value => value + 1)}>{t(lang, 'Try again', 'إعادة المحاولة')}</button>}</div></aside></div>}
+    {panel && panelCatalogReady && <div className="overlay" onClick={() => setPanel(null)}><aside className="side-panel" onClick={e => e.stopPropagation()} aria-label={panel === 'cart' ? t(lang,'Shopping bag','حقيبة التسوق') : t(lang,'Favorites','المفضلة')}><div className="panel-header"><div><span className="section-kicker">{panel === 'cart' ? t(lang,'YOUR SELECTION','اختياراتك') : t(lang,'SAVED FOR LATER','محفوظاتك')}</span><h2>{panel === 'cart' ? t(lang,`Shopping bag (${cartCount})`,`حقيبة التسوق (${cartCount})`) : t(lang,`Favorites (${favorites.length})`,`المفضلة (${favorites.length})`)}</h2></div><button className="icon-button" onClick={() => setPanel(null)} aria-label={t(lang,'Close','إغلاق')}><X /></button></div>
       {panel === 'cart' ? cart.length ? <><div className="panel-lines">{cart.map(line => { const p = products.find(item => item.id === line.id)!; return <div className="drawer-item" key={p.id}><img src={p.image} alt="" /><div className="drawer-item-info"><button className="drawer-name" onClick={() => { setDetail(p); setPanel(null); }}>{ar ? p.nameAr : p.name}</button><small>{money(p.price)}</small><div className="quantity-control"><button onClick={() => quantity(p.id, -1)} aria-label={t(lang,'Decrease quantity','تقليل الكمية')}><Minus /></button><span>{line.quantity}</span><button onClick={() => quantity(p.id, 1)} aria-label={t(lang,'Increase quantity','زيادة الكمية')}><Plus /></button></div></div><button className="remove-button" onClick={() => setCart(current => current.filter(item => item.id !== p.id))} aria-label={t(lang,'Remove item','إزالة المنتج')}><X size={16} /></button></div>; })}</div><div className="panel-footer"><div><span>{t(lang,'Subtotal','المجموع الفرعي')}</span><b>{money(total)}</b></div><small>{t(lang, 'Complimentary VIP courier delivery across Kuwait.', 'توصيل VIP مجاني في أنحاء الكويت.')}</small><button className="button-dark" onClick={() => { setPanel(null); setLocation('/checkout'); window.scrollTo(0,0); }}>{t(lang,'Proceed to checkout','إتمام الطلب')} <ArrowRight size={16} /></button><button className="continue-link" onClick={() => setPanel(null)}>{t(lang,'Continue shopping','متابعة التسوق')}</button></div></> : <div className="panel-empty"><ShoppingBag /><h3>{t(lang,'Your bag is waiting for something exceptional.','حقيبتك بانتظار قطعة استثنائية.')}</h3><p>{t(lang,'Explore pieces selected for the horse and rider.', 'اكتشف مختاراتنا للخيل والفارس.')}</p><button className="button-dark" onClick={() => setPanel(null)}>{t(lang,'Explore collection','اكتشف المجموعة')}</button></div>
       : favorites.length ? <div className="panel-lines">{favorites.map(id => { const p = products.find(item => item.id === id)!; return <div className="drawer-item" key={id}><img src={p.image} alt="" /><div className="drawer-item-info"><button className="drawer-name" onClick={() => { setDetail(p); setPanel(null); }}>{ar ? p.nameAr : p.name}</button><small>{money(p.price)}</small><button className="favorite-add" onClick={() => addToCart(p)}>{t(lang,'Add to bag','أضف للحقيبة')}</button></div><button className="remove-button" onClick={() => toggleFavorite(id)} aria-label={t(lang,'Remove favorite','إزالة من المفضلة')}><X size={16} /></button></div>; })}</div> : <div className="panel-empty"><Heart /><h3>{t(lang,'Your considered pieces, kept close.','مقتنياتك المفضلة في مكان واحد.')}</h3><p>{t(lang,'Save a piece you love and return to it here.', 'احفظ القطع التي تحبها للعودة إليها لاحقاً.')}</p><button className="button-dark" onClick={() => setPanel(null)}>{t(lang,'Explore collection','اكتشف المجموعة')}</button></div>}</aside></div>}
     {detail && <div className="overlay modal-overlay" onClick={() => setDetail(null)}><section className="product-modal" role="dialog" aria-modal="true" aria-label={ar ? detail.nameAr : detail.name} onClick={e => e.stopPropagation()}><button className="modal-close icon-button" onClick={() => setDetail(null)} aria-label={t(lang,'Close','إغلاق')}><X /></button><div className="modal-image"><img src={detail.image} alt={detail.name} /></div><div className="modal-info"><span className="section-kicker">{ar ? detail.categoryAr : detail.category}</span><h2>{ar ? detail.nameAr : detail.name}</h2><strong>{money(detail.price)}</strong><p>{ar ? detail.descriptionAr : detail.description}</p>{detail.shelf && <p className="care-safety-note">{detail.shelf === 'supplements' ? t(lang, 'Follow the product label and consult your veterinarian before introducing a new feed supplement.', 'اتبع ملصق المنتج واستشر الطبيب البيطري قبل إضافة مكمل جديد إلى العلف.') : t(lang, 'Non-prescription care item. Consult a veterinarian about injuries or symptoms; this product is not a substitute for veterinary treatment.', 'منتج عناية غير موصوف طبياً. استشر الطبيب البيطري بشأن الإصابات أو الأعراض؛ ولا يغني هذا المنتج عن العلاج البيطري.')}</p>}<div className="product-perks"><span><Check /> {t(lang,'Complimentary Kuwait delivery','توصيل مجاني داخل الكويت')}</span><span><Check /> {t(lang,'Selected by our Salmiya atelier','اختير بعناية في أتيليه السالمية')}</span></div><button className="button-dark" onClick={() => { addToCart(detail); setDetail(null); }}>{t(lang,'Add to shopping bag','أضف إلى حقيبة التسوق')} <ShoppingBag size={17} /></button><button className="modal-favorite" onClick={() => toggleFavorite(detail.id)}><Heart fill={favorites.includes(detail.id) ? 'currentColor' : 'none'} /> {favorites.includes(detail.id) ? t(lang,'Saved to favorites','تم الحفظ في المفضلة') : t(lang,'Save to favorites','أضف إلى المفضلة')}</button></div></section></div>}

@@ -1,1 +1,2 @@
 - [ROYAL EQUINE brand](royal-equine-brand.md) — Luxury equestrian retailer in Kuwait; storefront should support Arabic/English and KWD.
+- [API server ESM interop](api-server-esm-interop.md) — Externalized CommonJS dependencies need runtime import styles that work in native Node ESM.

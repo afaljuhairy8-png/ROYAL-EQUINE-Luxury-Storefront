@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: store
+    description: Store catalogue and order operations
+  - name: auth
+    description: Email and password account operations
 paths:
   /healthz:
     get:
@@ -24,7 +28,201 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [store]
+      summary: List products
+      responses:
+        "200":
+          description: Product catalogue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoreProduct"
+        "503":
+          description: Product database is not configured or unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /auth/sign-up:
+    post:
+      operationId: signUp
+      tags: [auth]
+      summary: Create an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpInput"
+      responses:
+        "201":
+          description: Account created and session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Invalid registration input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Required server secrets are missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /auth/login:
+    post:
+      operationId: logIn
+      tags: [auth]
+      summary: Start an account session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Invalid login input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Required server secrets are missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get the signed-in user
+      security:
+        - SessionCookie: []
+      responses:
+        "200":
+          description: Current account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not signed in or session is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /auth/logout:
+    post:
+      operationId: logOut
+      tags: [auth]
+      summary: End the current browser session
+      responses:
+        "200":
+          description: Session cookie cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+  /orders:
+    get:
+      operationId: listMyOrders
+      tags: [store]
+      summary: List orders belonging to the signed-in user
+      security:
+        - SessionCookie: []
+      responses:
+        "200":
+          description: Orders owned by the current account
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoreOrder"
+        "401":
+          description: Sign in is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Order database is not configured or unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      operationId: placeOrder
+      tags: [store]
+      summary: Place an order for the signed-in user
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaceOrderInput"
+      responses:
+        "201":
+          description: Order saved to the current user's account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreOrder"
+        "400":
+          description: Invalid order input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign in is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Order database is not configured or unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: royal_auth
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +231,113 @@ components:
           type: string
       required:
         - status
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    ActionResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required: [success]
+    AuthUser:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+      required: [id, name, email]
+    SignUpInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 2, maxLength: 100 }
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 8, maxLength: 128 }
+      required: [name, email, password]
+    LoginInput:
+      type: object
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 8, maxLength: 128 }
+      required: [email, password]
+    StoreProduct:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        nameAr: { type: string }
+        category: { type: string }
+        categoryAr: { type: string }
+        description: { type: string }
+        descriptionAr: { type: string }
+        department: { type: string, enum: [horse, rider, care] }
+        price: { type: number, minimum: 0 }
+        image: { type: string }
+        badge: { type: string }
+        badgeAr: { type: string }
+        shelf: { type: string, enum: [supplements, medicine] }
+      required: [id, name, nameAr, category, categoryAr, description, descriptionAr, department, price, image]
+    CheckoutItemInput:
+      type: object
+      properties:
+        productId: { type: string, minLength: 1 }
+        quantity: { type: integer, minimum: 1, maximum: 99 }
+      required: [productId, quantity]
+    DeliveryDetailsInput:
+      type: object
+      properties:
+        firstName: { type: string, minLength: 1, maxLength: 80 }
+        lastName: { type: string, minLength: 1, maxLength: 80 }
+        phone: { type: string, pattern: "^[0-9]{8}$" }
+        area: { type: string, minLength: 1, maxLength: 80 }
+        address: { type: string, minLength: 1, maxLength: 300 }
+        notes: { type: string, maxLength: 1000 }
+      required: [firstName, lastName, phone, area, address]
+    PlaceOrderInput:
+      type: object
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/CheckoutItemInput"
+        delivery:
+          $ref: "#/components/schemas/DeliveryDetailsInput"
+      required: [items, delivery]
+    OrderItem:
+      type: object
+      properties:
+        productId: { type: string }
+        name: { type: string }
+        nameAr: { type: string }
+        image: { type: string }
+        price: { type: number, minimum: 0 }
+        quantity: { type: integer, minimum: 1 }
+      required: [productId, name, nameAr, image, price, quantity]
+    DeliveryDetails:
+      allOf:
+        - $ref: "#/components/schemas/DeliveryDetailsInput"
+        - type: object
+          properties:
+            email: { type: string, format: email }
+          required: [email]
+    StoreOrder:
+      type: object
+      properties:
+        id: { type: string }
+        orderNumber: { type: string }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        delivery:
+          $ref: "#/components/schemas/DeliveryDetails"
+        total: { type: number, minimum: 0 }
+        status: { type: string, enum: [pending, paid] }
+        createdAt: { type: string, format: date-time }
+      required: [id, orderNumber, items, delivery, total, status, createdAt]
 
