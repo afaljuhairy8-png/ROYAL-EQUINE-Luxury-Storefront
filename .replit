@@ -18,3 +18,9 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+MONGODB_URI = "mongodb+srv://afaljuhairy8_db_user:<db_password>@cluster0.wz5p3el.mongodb.net/?appName=Cluster0"
+JWT_SECRET = "hfyjfuyikfid7gkgkuf1234567876yg6t"
