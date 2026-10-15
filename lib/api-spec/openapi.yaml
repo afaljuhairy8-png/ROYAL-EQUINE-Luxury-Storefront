@@ -14,6 +14,8 @@ tags:
     description: Store catalogue and order operations
   - name: auth
     description: Email and password account operations
+  - name: admin
+    description: Protected catalogue and order management
 paths:
   /healthz:
     get:
@@ -217,6 +219,270 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /admin/products:
+    get:
+      operationId: listAdminProducts
+      tags: [admin]
+      summary: List products for the admin dashboard
+      security:
+        - SessionCookie: []
+      responses:
+        "200":
+          description: Product catalogue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoreProduct"
+        "401":
+          description: Sign in is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Admin access is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Admin configuration or product database is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      operationId: createAdminProduct
+      tags: [admin]
+      summary: Add a product to the catalogue
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProductInput"
+      responses:
+        "201":
+          description: Product added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreProduct"
+        "400":
+          description: Invalid product details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign in is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Admin access is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: A product with the generated identifier already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Product database is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /admin/products/{productId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+    patch:
+      operationId: updateAdminProduct
+      tags: [admin]
+      summary: Update a catalogue product
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProductInput"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreProduct"
+        "400":
+          description: Invalid product details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign in is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Admin access is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Product database is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteAdminProduct
+      tags: [admin]
+      summary: Remove a product from the catalogue
+      security:
+        - SessionCookie: []
+      responses:
+        "204":
+          description: Product removed
+        "401":
+          description: Sign in is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Admin access is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Product database is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /admin/orders:
+    get:
+      operationId: listAdminOrders
+      tags: [admin]
+      summary: List all customer orders
+      security:
+        - SessionCookie: []
+      responses:
+        "200":
+          description: Customer orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoreOrder"
+        "401":
+          description: Sign in is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Admin access is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Order database is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /admin/orders/{orderId}:
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+    patch:
+      operationId: updateAdminOrder
+      tags: [admin]
+      summary: Update an order status
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminOrderStatusUpdate"
+      responses:
+        "200":
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreOrder"
+        "400":
+          description: Invalid order status or identifier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign in is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Admin access is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Order database is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   securitySchemes:
     SessionCookie:
@@ -249,7 +515,8 @@ components:
         id: { type: string }
         name: { type: string }
         email: { type: string, format: email }
-      required: [id, name, email]
+        isAdmin: { type: boolean }
+      required: [id, name, email, isAdmin]
     SignUpInput:
       type: object
       properties:
@@ -280,6 +547,37 @@ components:
         badgeAr: { type: string }
         shelf: { type: string, enum: [supplements, medicine] }
       required: [id, name, nameAr, category, categoryAr, description, descriptionAr, department, price, image]
+    AdminProductInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        nameAr: { type: string, minLength: 1, maxLength: 160 }
+        category: { type: string, minLength: 1, maxLength: 100 }
+        categoryAr: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, minLength: 1, maxLength: 1200 }
+        descriptionAr: { type: string, minLength: 1, maxLength: 1200 }
+        department: { type: string, enum: [horse, rider, care] }
+        price: { type: number, minimum: 0 }
+        image: { type: string, minLength: 1, maxLength: 2000 }
+        badge: { type: string, maxLength: 80 }
+        badgeAr: { type: string, maxLength: 80 }
+        shelf: { type: string, enum: [supplements, medicine] }
+      required: [name, nameAr, category, categoryAr, description, descriptionAr, department, price, image]
+    AdminProductParams:
+      type: object
+      properties:
+        productId: { type: string, minLength: 1 }
+      required: [productId]
+    AdminOrderParams:
+      type: object
+      properties:
+        orderId: { type: string, minLength: 1 }
+      required: [orderId]
+    AdminOrderStatusUpdate:
+      type: object
+      properties:
+        status: { type: string, enum: [pending, paid] }
+      required: [status]
     CheckoutItemInput:
       type: object
       properties:

@@ -21,6 +21,7 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  isAdmin: boolean;
 }
 
 export interface SignUpInput {
@@ -80,6 +81,91 @@ export interface StoreProduct {
   badge?: string;
   badgeAr?: string;
   shelf?: StoreProductShelf;
+}
+
+export type AdminProductInputDepartment = typeof AdminProductInputDepartment[keyof typeof AdminProductInputDepartment];
+
+
+export const AdminProductInputDepartment = {
+  horse: 'horse',
+  rider: 'rider',
+  care: 'care',
+} as const;
+
+export type AdminProductInputShelf = typeof AdminProductInputShelf[keyof typeof AdminProductInputShelf];
+
+
+export const AdminProductInputShelf = {
+  supplements: 'supplements',
+  medicine: 'medicine',
+} as const;
+
+export interface AdminProductInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  nameAr: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  category: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  categoryAr: string;
+  /**
+     * @minLength 1
+     * @maxLength 1200
+     */
+  description: string;
+  /**
+     * @minLength 1
+     * @maxLength 1200
+     */
+  descriptionAr: string;
+  department: AdminProductInputDepartment;
+  /** @minimum 0 */
+  price: number;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  image: string;
+  /** @maxLength 80 */
+  badge?: string;
+  /** @maxLength 80 */
+  badgeAr?: string;
+  shelf?: AdminProductInputShelf;
+}
+
+export interface AdminProductParams {
+  /** @minLength 1 */
+  productId: string;
+}
+
+export interface AdminOrderParams {
+  /** @minLength 1 */
+  orderId: string;
+}
+
+export type AdminOrderStatusUpdateStatus = typeof AdminOrderStatusUpdateStatus[keyof typeof AdminOrderStatusUpdateStatus];
+
+
+export const AdminOrderStatusUpdateStatus = {
+  pending: 'pending',
+  paid: 'paid',
+} as const;
+
+export interface AdminOrderStatusUpdate {
+  status: AdminOrderStatusUpdateStatus;
 }
 
 export interface CheckoutItemInput {

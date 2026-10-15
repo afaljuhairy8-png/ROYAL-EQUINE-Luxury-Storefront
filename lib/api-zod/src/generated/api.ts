@@ -64,7 +64,8 @@ export const SignUpBody = zod.object({
 export const SignUpResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "email": zod.string().email()
+  "email": zod.string().email(),
+  "isAdmin": zod.boolean()
 })
 
 
@@ -86,7 +87,8 @@ export const LogInBody = zod.object({
 export const LogInResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "email": zod.string().email()
+  "email": zod.string().email(),
+  "isAdmin": zod.boolean()
 })
 
 
@@ -96,7 +98,8 @@ export const LogInResponse = zod.object({
 export const GetCurrentUserResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "email": zod.string().email()
+  "email": zod.string().email(),
+  "isAdmin": zod.boolean()
 })
 
 
@@ -233,6 +236,281 @@ export const PlaceOrderResponse = zod.object({
   "email": zod.string().email()
 })),
   "total": zod.number().min(placeOrderResponseTotalMin),
+  "status": zod.enum(['pending', 'paid']),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List products for the admin dashboard
+ */
+export const listAdminProductsResponsePriceMin = 0;
+
+
+
+export const ListAdminProductsResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "nameAr": zod.string(),
+  "category": zod.string(),
+  "categoryAr": zod.string(),
+  "description": zod.string(),
+  "descriptionAr": zod.string(),
+  "department": zod.enum(['horse', 'rider', 'care']),
+  "price": zod.number().min(listAdminProductsResponsePriceMin),
+  "image": zod.string(),
+  "badge": zod.string().optional(),
+  "badgeAr": zod.string().optional(),
+  "shelf": zod.enum(['supplements', 'medicine']).optional()
+})
+export const ListAdminProductsResponse = zod.array(ListAdminProductsResponseItem)
+
+
+/**
+ * @summary Add a product to the catalogue
+ */
+export const createAdminProductBodyNameMax = 160;
+
+export const createAdminProductBodyNameArMax = 160;
+
+export const createAdminProductBodyCategoryMax = 100;
+
+export const createAdminProductBodyCategoryArMax = 100;
+
+export const createAdminProductBodyDescriptionMax = 1200;
+
+export const createAdminProductBodyDescriptionArMax = 1200;
+
+export const createAdminProductBodyPriceMin = 0;
+
+export const createAdminProductBodyImageMax = 2000;
+
+export const createAdminProductBodyBadgeMax = 80;
+
+export const createAdminProductBodyBadgeArMax = 80;
+
+
+
+export const CreateAdminProductBody = zod.object({
+  "name": zod.string().min(1).max(createAdminProductBodyNameMax),
+  "nameAr": zod.string().min(1).max(createAdminProductBodyNameArMax),
+  "category": zod.string().min(1).max(createAdminProductBodyCategoryMax),
+  "categoryAr": zod.string().min(1).max(createAdminProductBodyCategoryArMax),
+  "description": zod.string().min(1).max(createAdminProductBodyDescriptionMax),
+  "descriptionAr": zod.string().min(1).max(createAdminProductBodyDescriptionArMax),
+  "department": zod.enum(['horse', 'rider', 'care']),
+  "price": zod.number().min(createAdminProductBodyPriceMin),
+  "image": zod.string().min(1).max(createAdminProductBodyImageMax),
+  "badge": zod.string().max(createAdminProductBodyBadgeMax).optional(),
+  "badgeAr": zod.string().max(createAdminProductBodyBadgeArMax).optional(),
+  "shelf": zod.enum(['supplements', 'medicine']).optional()
+})
+
+export const createAdminProductResponsePriceMin = 0;
+
+
+
+export const CreateAdminProductResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "nameAr": zod.string(),
+  "category": zod.string(),
+  "categoryAr": zod.string(),
+  "description": zod.string(),
+  "descriptionAr": zod.string(),
+  "department": zod.enum(['horse', 'rider', 'care']),
+  "price": zod.number().min(createAdminProductResponsePriceMin),
+  "image": zod.string(),
+  "badge": zod.string().optional(),
+  "badgeAr": zod.string().optional(),
+  "shelf": zod.enum(['supplements', 'medicine']).optional()
+})
+
+
+/**
+ * @summary Update a catalogue product
+ */
+
+
+
+export const UpdateAdminProductParams = zod.object({
+  "productId": zod.coerce.string().min(1)
+})
+
+export const updateAdminProductBodyNameMax = 160;
+
+export const updateAdminProductBodyNameArMax = 160;
+
+export const updateAdminProductBodyCategoryMax = 100;
+
+export const updateAdminProductBodyCategoryArMax = 100;
+
+export const updateAdminProductBodyDescriptionMax = 1200;
+
+export const updateAdminProductBodyDescriptionArMax = 1200;
+
+export const updateAdminProductBodyPriceMin = 0;
+
+export const updateAdminProductBodyImageMax = 2000;
+
+export const updateAdminProductBodyBadgeMax = 80;
+
+export const updateAdminProductBodyBadgeArMax = 80;
+
+
+
+export const UpdateAdminProductBody = zod.object({
+  "name": zod.string().min(1).max(updateAdminProductBodyNameMax),
+  "nameAr": zod.string().min(1).max(updateAdminProductBodyNameArMax),
+  "category": zod.string().min(1).max(updateAdminProductBodyCategoryMax),
+  "categoryAr": zod.string().min(1).max(updateAdminProductBodyCategoryArMax),
+  "description": zod.string().min(1).max(updateAdminProductBodyDescriptionMax),
+  "descriptionAr": zod.string().min(1).max(updateAdminProductBodyDescriptionArMax),
+  "department": zod.enum(['horse', 'rider', 'care']),
+  "price": zod.number().min(updateAdminProductBodyPriceMin),
+  "image": zod.string().min(1).max(updateAdminProductBodyImageMax),
+  "badge": zod.string().max(updateAdminProductBodyBadgeMax).optional(),
+  "badgeAr": zod.string().max(updateAdminProductBodyBadgeArMax).optional(),
+  "shelf": zod.enum(['supplements', 'medicine']).optional()
+})
+
+export const updateAdminProductResponsePriceMin = 0;
+
+
+
+export const UpdateAdminProductResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "nameAr": zod.string(),
+  "category": zod.string(),
+  "categoryAr": zod.string(),
+  "description": zod.string(),
+  "descriptionAr": zod.string(),
+  "department": zod.enum(['horse', 'rider', 'care']),
+  "price": zod.number().min(updateAdminProductResponsePriceMin),
+  "image": zod.string(),
+  "badge": zod.string().optional(),
+  "badgeAr": zod.string().optional(),
+  "shelf": zod.enum(['supplements', 'medicine']).optional()
+})
+
+
+/**
+ * @summary Remove a product from the catalogue
+ */
+
+
+
+export const DeleteAdminProductParams = zod.object({
+  "productId": zod.coerce.string().min(1)
+})
+
+export const DeleteAdminProductResponse = zod.void()
+
+
+/**
+ * @summary List all customer orders
+ */
+export const listAdminOrdersResponseItemsItemPriceMin = 0;
+
+
+export const listAdminOrdersResponseDeliveryOneFirstNameMax = 80;
+
+export const listAdminOrdersResponseDeliveryOneLastNameMax = 80;
+
+export const listAdminOrdersResponseDeliveryOnePhoneRegExp = new RegExp('^[0-9]{8}$');
+export const listAdminOrdersResponseDeliveryOneAreaMax = 80;
+
+export const listAdminOrdersResponseDeliveryOneAddressMax = 300;
+
+export const listAdminOrdersResponseDeliveryOneNotesMax = 1000;
+
+export const listAdminOrdersResponseTotalMin = 0;
+
+
+
+export const ListAdminOrdersResponseItem = zod.object({
+  "id": zod.string(),
+  "orderNumber": zod.string(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "name": zod.string(),
+  "nameAr": zod.string(),
+  "image": zod.string(),
+  "price": zod.number().min(listAdminOrdersResponseItemsItemPriceMin),
+  "quantity": zod.number().int().min(1)
+})),
+  "delivery": zod.object({
+  "firstName": zod.string().min(1).max(listAdminOrdersResponseDeliveryOneFirstNameMax),
+  "lastName": zod.string().min(1).max(listAdminOrdersResponseDeliveryOneLastNameMax),
+  "phone": zod.string().regex(listAdminOrdersResponseDeliveryOnePhoneRegExp),
+  "area": zod.string().min(1).max(listAdminOrdersResponseDeliveryOneAreaMax),
+  "address": zod.string().min(1).max(listAdminOrdersResponseDeliveryOneAddressMax),
+  "notes": zod.string().max(listAdminOrdersResponseDeliveryOneNotesMax).optional()
+}).and(zod.object({
+  "email": zod.string().email()
+})),
+  "total": zod.number().min(listAdminOrdersResponseTotalMin),
+  "status": zod.enum(['pending', 'paid']),
+  "createdAt": zod.coerce.date()
+})
+export const ListAdminOrdersResponse = zod.array(ListAdminOrdersResponseItem)
+
+
+/**
+ * @summary Update an order status
+ */
+
+
+
+export const UpdateAdminOrderParams = zod.object({
+  "orderId": zod.coerce.string().min(1)
+})
+
+export const UpdateAdminOrderBody = zod.object({
+  "status": zod.enum(['pending', 'paid'])
+})
+
+export const updateAdminOrderResponseItemsItemPriceMin = 0;
+
+
+export const updateAdminOrderResponseDeliveryOneFirstNameMax = 80;
+
+export const updateAdminOrderResponseDeliveryOneLastNameMax = 80;
+
+export const updateAdminOrderResponseDeliveryOnePhoneRegExp = new RegExp('^[0-9]{8}$');
+export const updateAdminOrderResponseDeliveryOneAreaMax = 80;
+
+export const updateAdminOrderResponseDeliveryOneAddressMax = 300;
+
+export const updateAdminOrderResponseDeliveryOneNotesMax = 1000;
+
+export const updateAdminOrderResponseTotalMin = 0;
+
+
+
+export const UpdateAdminOrderResponse = zod.object({
+  "id": zod.string(),
+  "orderNumber": zod.string(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "name": zod.string(),
+  "nameAr": zod.string(),
+  "image": zod.string(),
+  "price": zod.number().min(updateAdminOrderResponseItemsItemPriceMin),
+  "quantity": zod.number().int().min(1)
+})),
+  "delivery": zod.object({
+  "firstName": zod.string().min(1).max(updateAdminOrderResponseDeliveryOneFirstNameMax),
+  "lastName": zod.string().min(1).max(updateAdminOrderResponseDeliveryOneLastNameMax),
+  "phone": zod.string().regex(updateAdminOrderResponseDeliveryOnePhoneRegExp),
+  "area": zod.string().min(1).max(updateAdminOrderResponseDeliveryOneAreaMax),
+  "address": zod.string().min(1).max(updateAdminOrderResponseDeliveryOneAddressMax),
+  "notes": zod.string().max(updateAdminOrderResponseDeliveryOneNotesMax).optional()
+}).and(zod.object({
+  "email": zod.string().email()
+})),
+  "total": zod.number().min(updateAdminOrderResponseTotalMin),
   "status": zod.enum(['pending', 'paid']),
   "createdAt": zod.coerce.date()
 })

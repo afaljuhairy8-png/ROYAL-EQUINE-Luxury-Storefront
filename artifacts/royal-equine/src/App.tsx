@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Heart, Menu, Minus, Plus, Search, ShoppingBag, SlidersHorizontal, Truck, UserRound, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Heart, Menu, Minus, Plus, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Truck, UserRound, X } from 'lucide-react';
 import type { AuthUser } from '@workspace/api-client-react';
 import { categories, type Product, type ProductFilter } from './catalogue';
 import { AccountPage, OrdersPage } from './components/AccountPages';
+import { AdminDashboard } from './components/AdminDashboard';
 
 type Lang = 'en' | 'ar';
 type CartLine = { id: string; quantity: number };
@@ -39,9 +40,13 @@ function App() {
   const loginPage = location === '/login';
   const signupPage = location === '/signup';
   const ordersPage = location === '/orders';
+  const adminPage = location === '/admin';
   useEffect(() => {
     if (ordersPage && !authLoading && !user) setLocation('/login?next=%2Forders');
   }, [ordersPage, authLoading, user, setLocation]);
+  useEffect(() => {
+    if (adminPage && !authLoading && !user) setLocation('/login?next=%2Fadmin');
+  }, [adminPage, authLoading, user, setLocation]);
   useEffect(() => {
     let active = true;
     setProductsLoading(true);
@@ -55,7 +60,7 @@ function App() {
       .catch(() => { if (active) setProductsUnavailable(true); })
       .finally(() => { if (active) setProductsLoading(false); });
     return () => { active = false; };
-  }, [catalogueRetry]);
+  }, [catalogueRetry, adminPage]);
   useEffect(() => {
     let active = true;
     fetch('/api/auth/me', { credentials: 'include' })
@@ -160,11 +165,12 @@ function App() {
         <span className="brand-seal" aria-hidden="true">RE</span><span><b>ROYAL EQUINE</b><small>KUWAIT · EST. 2014</small></span>
       </a>
       <nav className={`main-nav ${mobileMenu ? 'nav-open' : ''}`} aria-label={t(lang, 'Main navigation', 'التنقل الرئيسي')}>
-        <button className="nav-active" onClick={() => { setLocation('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{t(lang, 'Shop', 'تسوق')}</button>
+        <button className={!adminPage ? 'nav-active' : ''} onClick={() => { setLocation('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>{t(lang, 'Shop', 'تسوق')}</button>
         <button onClick={() => chooseDepartment('horse')}>{t(lang, 'Horse Equipment', 'معدات الخيل')}</button>
         <button onClick={() => chooseDepartment('rider')}>{t(lang, 'Rider Apparel', 'ملابس الفروسية')}</button>
         <button onClick={() => chooseDepartment('care')}>{t(lang, 'Horse Care', 'العناية بالخيل')}</button>
         <button onClick={() => setLocation(user ? '/orders' : '/login')}>{user ? <><UserRound size={14} /> {t(lang, 'My Orders', 'طلباتي')}</> : t(lang, 'Sign in', 'تسجيل الدخول')}</button>
+        {user?.isAdmin && <button className={adminPage ? 'nav-active' : ''} onClick={() => setLocation('/admin')} data-testid="link-admin-dashboard"><ShieldCheck size={14} /> {t(lang, 'Admin', 'الإدارة')}</button>}
         {user && <button onClick={logout}>{t(lang, 'Log out', 'تسجيل الخروج')}</button>}
       </nav>
       <div className="header-actions">
@@ -250,6 +256,12 @@ function App() {
         ? authLoading || !user
           ? <main className="account-page page-wrap"><div className="account-state" role="status">{t(lang, 'Checking your private account…', 'جارٍ التحقق من حسابك…')}</div></main>
           : <OrdersPage user={user} lang={lang} navigate={setLocation} />
+        : adminPage
+          ? authLoading
+            ? <main className="account-page page-wrap"><div className="account-state" role="status">{t(lang, 'Verifying atelier access…', 'جارٍ التحقق من صلاحية الوصول…')}</div></main>
+            : user?.isAdmin
+              ? <AdminDashboard lang={lang} />
+              : <main className="account-page page-wrap"><section className="checkout-auth-required" role="alert"><span className="section-kicker">{t(lang, 'PRIVATE OPERATIONS', 'العمليات الخاصة')}</span><h1>{t(lang, 'Admin access is required.', 'يتطلب الوصول صلاحية المسؤول.')}</h1><p>{t(lang, 'This account cannot access the atelier management area.', 'لا يملك هذا الحساب صلاحية دخول مساحة إدارة الأتيليه.')}</p><button className="button-dark" onClick={() => setLocation('/')}>{t(lang, 'Return to the shop', 'العودة إلى المتجر')} <ArrowRight size={16} /></button></section></main>
         : home;
 
   return <div className={`app-shell ${ar ? 'arabic' : ''}`} dir={ar ? 'rtl' : 'ltr'}>{header}{pageContent}{footer}
@@ -259,7 +271,7 @@ function App() {
       : favorites.length ? <div className="panel-lines">{favorites.map(id => { const p = products.find(item => item.id === id)!; return <div className="drawer-item" key={id}><img src={p.image} alt="" /><div className="drawer-item-info"><button className="drawer-name" onClick={() => { setDetail(p); setPanel(null); }}>{ar ? p.nameAr : p.name}</button><small>{money(p.price)}</small><button className="favorite-add" onClick={() => addToCart(p)}>{t(lang,'Add to bag','أضف للحقيبة')}</button></div><button className="remove-button" onClick={() => toggleFavorite(id)} aria-label={t(lang,'Remove favorite','إزالة من المفضلة')}><X size={16} /></button></div>; })}</div> : <div className="panel-empty"><Heart /><h3>{t(lang,'Your considered pieces, kept close.','مقتنياتك المفضلة في مكان واحد.')}</h3><p>{t(lang,'Save a piece you love and return to it here.', 'احفظ القطع التي تحبها للعودة إليها لاحقاً.')}</p><button className="button-dark" onClick={() => setPanel(null)}>{t(lang,'Explore collection','اكتشف المجموعة')}</button></div>}</aside></div>}
     {detail && <div className="overlay modal-overlay" onClick={() => setDetail(null)}><section className="product-modal" role="dialog" aria-modal="true" aria-label={ar ? detail.nameAr : detail.name} onClick={e => e.stopPropagation()}><button className="modal-close icon-button" onClick={() => setDetail(null)} aria-label={t(lang,'Close','إغلاق')}><X /></button><div className="modal-image"><img src={detail.image} alt={detail.name} /></div><div className="modal-info"><span className="section-kicker">{ar ? detail.categoryAr : detail.category}</span><h2>{ar ? detail.nameAr : detail.name}</h2><strong>{money(detail.price)}</strong><p>{ar ? detail.descriptionAr : detail.description}</p>{detail.shelf && <p className="care-safety-note">{detail.shelf === 'supplements' ? t(lang, 'Follow the product label and consult your veterinarian before introducing a new feed supplement.', 'اتبع ملصق المنتج واستشر الطبيب البيطري قبل إضافة مكمل جديد إلى العلف.') : t(lang, 'Non-prescription care item. Consult a veterinarian about injuries or symptoms; this product is not a substitute for veterinary treatment.', 'منتج عناية غير موصوف طبياً. استشر الطبيب البيطري بشأن الإصابات أو الأعراض؛ ولا يغني هذا المنتج عن العلاج البيطري.')}</p>}<div className="product-perks"><span><Check /> {t(lang,'Complimentary Kuwait delivery','توصيل مجاني داخل الكويت')}</span><span><Check /> {t(lang,'Selected by our Salmiya atelier','اختير بعناية في أتيليه السالمية')}</span></div><button className="button-dark" onClick={() => { addToCart(detail); setDetail(null); }}>{t(lang,'Add to shopping bag','أضف إلى حقيبة التسوق')} <ShoppingBag size={17} /></button><button className="modal-favorite" onClick={() => toggleFavorite(detail.id)}><Heart fill={favorites.includes(detail.id) ? 'currentColor' : 'none'} /> {favorites.includes(detail.id) ? t(lang,'Saved to favorites','تم الحفظ في المفضلة') : t(lang,'Save to favorites','أضف إلى المفضلة')}</button></div></section></div>}
     {toast && <div className="toast-message" role="status"><Check size={17} />{toast}<button onClick={() => setPanel('cart')}>{t(lang,'View bag','عرض الحقيبة')}</button></div>}
-    {!checkout && <button className="floating-checkout" onClick={() => setPanel('cart')} aria-label={t(lang,'Open shopping bag','افتح حقيبة التسوق')}><ShoppingBag />{cartCount > 0 && <i>{cartCount}</i>}</button>}
+     {!checkout && !adminPage && <button className="floating-checkout" onClick={() => setPanel('cart')} aria-label={t(lang,'Open shopping bag','افتح حقيبة التسوق')}><ShoppingBag />{cartCount > 0 && <i>{cartCount}</i>}</button>}
   </div>;
 }
 

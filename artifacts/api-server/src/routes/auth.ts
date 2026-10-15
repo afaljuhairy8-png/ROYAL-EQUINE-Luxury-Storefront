@@ -5,6 +5,7 @@ import { AuthConfigurationError, AUTH_COOKIE_NAME, createSessionToken, getJwtSec
 import { connectMongo, MongoConfigurationError } from "../lib/mongodb.js";
 import { UserModel } from "../models/User.js";
 import { requireAuth } from "../middleware/require-auth.js";
+import { isAdminEmail } from "../lib/admin.js";
 import { LogInBody, LogInResponse, LogOutResponse, GetCurrentUserResponse, SignUpBody, SignUpResponse } from "@workspace/api-zod";
 
 const router = Router();
@@ -59,6 +60,7 @@ router.post("/auth/sign-up", async (req, res) => {
       id: user._id.toString(),
       name: user.name,
       email: user.email,
+      isAdmin: isAdminEmail(user.email),
     });
     res.cookie(AUTH_COOKIE_NAME, createSessionToken(user._id.toString()), sessionCookieOptions());
     res.status(201).json(payload);
@@ -91,6 +93,7 @@ router.post("/auth/login", async (req, res) => {
       id: user._id.toString(),
       name: user.name,
       email: user.email,
+      isAdmin: isAdminEmail(user.email),
     });
     res.cookie(AUTH_COOKIE_NAME, createSessionToken(user._id.toString()), sessionCookieOptions());
     res.status(200).json(payload);
