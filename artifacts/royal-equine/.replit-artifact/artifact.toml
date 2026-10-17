@@ -1,7 +1,7 @@
 kind = "web"
 previewPath = "/"
 title = "ROYAL EQUINE"
-description = "A premium bilingual equestrian e-commerce storefront for ROYAL EQUINE in Kuwait, matching the supplied Stitch design and supporting product discovery, favorites, a persistent cart, product details, and a responsive checkout experience in English and Arabic with KWD pricing."
+description = "A premium bilingual equestrian storefront and API for ROYAL EQUINE in Kuwait, with database-backed products, secure client accounts, private orders, admin tools, and KWD checkout."
 version = "1.0.0"
 id = "artifacts/royal-equine"
 router = "path"
@@ -14,14 +14,23 @@ localPort = 20188
 [services.development]
 run = "pnpm --filter @workspace/royal-equine run dev"
 
-[services.production]
-build = [ "pnpm", "--filter", "@workspace/royal-equine", "run", "build" ]
-serve = "static"
-publicDir = "artifacts/royal-equine/dist/public"
+[services.production.build]
+args = [ "pnpm", "--filter", "@workspace/royal-equine", "run", "build" ]
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+[services.production.build.env]
+NODE_ENV = "production"
+BASE_PATH = "/"
+
+[services.production.run]
+args = [ "pnpm", "--filter", "@workspace/royal-equine", "run", "start" ]
+
+[services.production.run.env]
+PORT = "20188"
+NODE_ENV = "production"
+BASE_PATH = "/"
+
+[services.production.health.startup]
+path = "/api/healthz"
 
 [services.env]
 PORT = "20188"

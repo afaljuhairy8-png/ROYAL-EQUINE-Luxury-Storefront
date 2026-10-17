@@ -17,6 +17,9 @@
     },
     {
       "path": "../../lib/royal-equine-catalogue"
+    },
+    {
+      "path": "../../lib/royal-equine-server"
     }
   ]
 }

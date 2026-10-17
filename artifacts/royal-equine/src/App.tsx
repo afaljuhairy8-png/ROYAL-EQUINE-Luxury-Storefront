@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Heart, Menu, Minus, Plus, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Truck, UserRound, X } from 'lucide-react';
@@ -16,9 +18,10 @@ const money = (value: number) => `${value.toLocaleString('en-KW', { minimumFract
 
 function App() {
   const [location, setLocation] = useLocation();
-  const [lang, setLang] = useState<Lang>(() => read('royal-language', 'en'));
-  const [cart, setCart] = useState<CartLine[]>(() => read('royal-cart', []));
-  const [favorites, setFavorites] = useState<string[]>(() => read('royal-favorites', []));
+  const [lang, setLang] = useState<Lang>('en');
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [preferencesReady, setPreferencesReady] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsUnavailable, setProductsUnavailable] = useState(false);
@@ -70,9 +73,20 @@ function App() {
       .finally(() => { if (active) setAuthLoading(false); });
     return () => { active = false; };
   }, []);
-  useEffect(() => { localStorage.setItem('royal-language', JSON.stringify(lang)); document.documentElement.lang = lang; document.documentElement.dir = ar ? 'rtl' : 'ltr'; }, [lang, ar]);
-  useEffect(() => { localStorage.setItem('royal-cart', JSON.stringify(cart)); }, [cart]);
-  useEffect(() => { localStorage.setItem('royal-favorites', JSON.stringify(favorites)); }, [favorites]);
+  useEffect(() => {
+    setLang(read('royal-language', 'en'));
+    setCart(read('royal-cart', []));
+    setFavorites(read('royal-favorites', []));
+    setPreferencesReady(true);
+  }, []);
+  useEffect(() => {
+    if (!preferencesReady) return;
+    localStorage.setItem('royal-language', JSON.stringify(lang));
+    localStorage.setItem('royal-cart', JSON.stringify(cart));
+    localStorage.setItem('royal-favorites', JSON.stringify(favorites));
+    document.documentElement.lang = lang;
+    document.documentElement.dir = ar ? 'rtl' : 'ltr';
+  }, [preferencesReady, lang, cart, favorites, ar]);
   useEffect(() => {
     if (!products.length) return;
     const availableIds = new Set(products.map(product => product.id));
@@ -157,6 +171,14 @@ function App() {
     }
   };
 
+  if (!preferencesReady) {
+    return (
+      <main className="page-wrap account-state" role="status">
+        {t(lang, "Loading ROYAL EQUINE…", "جارٍ تحميل رويال إكويني…")}
+      </main>
+    );
+  }
+
   const header = <header className="site-header">
     <div className="courier-strip"><span>{t(lang, 'COMPLIMENTARY VIP COURIER DELIVERY ACROSS KUWAIT & GCC  ·  PRIVATE ATELIER CONSULTATIONS AVAILABLE', 'توصيل VIP مجاني في الكويت ودول الخليج  ·  استشارات خاصة في الأتيليه')}</span></div>
     <div className="header-main">
@@ -207,7 +229,7 @@ function App() {
   const home = <main className="storefront">
     <section className="hero">
       <video className="hero-video" autoPlay muted loop playsInline preload="metadata" poster="https://lh3.googleusercontent.com/aida-public/AB6AXuD2oDXbSpMQNoByuknD6rTr3IR7-KdsS12UzlMr06kwIWBTSzJO-tFAnzy7hYXlu_sjEOlz7spZLRqaCv8sotwcWNbul7m12_sz5XgLy-PX3hIKj1CYo9gKTYAIq5DbYZlDkiNZ5lsFaalUsdpoEyk115Uy33OUaWhs2QVuVOc3RirpoT6o8bKWKFj9Ve7tefLbr0eJTFX0ZHaVdP7A9dRfEQyNOtqVIKRzfgQoKsRCKbBATHwlcjyGbQ">
-        <source src={`${import.meta.env.BASE_URL}royal-equine-promo.mp4`} type="video/mp4" />
+        <source src="/royal-equine-promo.mp4" type="video/mp4" />
       </video>
       <div className="hero-shade" />
       <div className="hero-content"><div className="eyebrow hero-eyebrow"><span />{t(lang, 'ROYAL EQUINE ATELIER · KUWAIT', 'أتيليه رويال إكويني · الكويت')}</div>

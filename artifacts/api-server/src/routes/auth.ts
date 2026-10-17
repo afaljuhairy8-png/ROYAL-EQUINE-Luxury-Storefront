@@ -1,6 +1,5 @@
-import bcrypt from "bcryptjs";
 import { Router } from "express";
-import { JsonWebTokenError } from "jsonwebtoken";
+import { hashPassword, verifyPassword } from "@workspace/royal-equine-server";
 import { AuthConfigurationError, AUTH_COOKIE_NAME, createSessionToken, getJwtSecret, sessionClearCookieOptions, sessionCookieOptions } from "../lib/auth.js";
 import { connectMongo, MongoConfigurationError } from "../lib/mongodb.js";
 import { UserModel } from "../models/User.js";
@@ -9,7 +8,6 @@ import { isAdminEmail } from "../lib/admin.js";
 import { LogInBody, LogInResponse, LogOutResponse, GetCurrentUserResponse, SignUpBody, SignUpResponse } from "@workspace/api-zod";
 
 const router = Router();
-const passwordCost = 12;
 
 function duplicateEmail(error: unknown): boolean {
   return Boolean(
@@ -54,7 +52,7 @@ router.post("/auth/sign-up", async (req, res) => {
     await connectMongo();
     await UserModel.init();
     const email = parsed.data.email.trim().toLowerCase();
-    const passwordHash = await bcrypt.hash(parsed.data.password, passwordCost);
+    const passwordHash = await hashPassword(parsed.data.password);
     const user = await UserModel.create({ name, email, passwordHash });
     const payload = SignUpResponse.parse({
       id: user._id.toString(),
@@ -85,7 +83,7 @@ router.post("/auth/login", async (req, res) => {
     await connectMongo();
     const email = parsed.data.email.trim().toLowerCase();
     const user = await UserModel.findOne({ email }).select("+passwordHash");
-    if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
+    if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
       res.status(401).json({ error: "Email or password is incorrect." });
       return;
     }
